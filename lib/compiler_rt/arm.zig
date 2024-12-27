@@ -54,20 +54,57 @@ const __divmoddi4 = @import("int.zig").__divmoddi4;
 const __udivmoddi4 = @import("int.zig").__udivmoddi4;
 
 extern fn memset(dest: ?[*]u8, c: i32, n: usize) ?[*]u8;
-extern fn memcpy(noalias dest: ?[*]u8, noalias src: ?[*]const u8, n: usize) ?[*]u8;
+// extern fn memcpy(noalias dest: ?[*]u8, noalias src: ?[*]const u8, n: usize) ?[*]u8;
+const memcpy = @import("memcpy.zig").memcpy;
 extern fn memmove(dest: ?[*]u8, src: ?[*]const u8, n: usize) ?[*]u8;
 
 pub fn __aeabi_memcpy(dest: [*]u8, src: [*]u8, n: usize) callconv(.AAPCS) void {
     @setRuntimeSafety(false);
-    _ = memcpy(dest, src, n);
+//     _ = memcpy(dest, src, n);
+    if (n != 0) {
+        var d = dest;
+        var s = src;
+        var len = n;
+        while (true) {
+            d[0] = s[0];
+            len -= 1;
+            if (len == 0) break;
+            d += 1;
+            s += 1;
+        }
+    }
 }
 pub fn __aeabi_memcpy4(dest: [*]u8, src: [*]u8, n: usize) callconv(.AAPCS) void {
     @setRuntimeSafety(false);
-    _ = memcpy(dest, src, n);
+//     _ = memcpy(dest, src, n);
+    if (n != 0) {
+        var d = dest;
+        var s = src;
+        var len = n;
+        while (true) {
+            d[0] = s[0];
+            len -= 1;
+            if (len == 0) break;
+            d += 1;
+            s += 1;
+        }
+    }
 }
 pub fn __aeabi_memcpy8(dest: [*]u8, src: [*]u8, n: usize) callconv(.AAPCS) void {
     @setRuntimeSafety(false);
-    _ = memcpy(dest, src, n);
+//     _ = memcpy(dest, src, n);
+    if (n != 0) {
+        var d = dest;
+        var s = src;
+        var len = n;
+        while (true) {
+            d[0] = s[0];
+            len -= 1;
+            if (len == 0) break;
+            d += 1;
+            s += 1;
+        }
+    }
 }
 
 pub fn __aeabi_memmove(dest: [*]u8, src: [*]u8, n: usize) callconv(.AAPCS) void {
