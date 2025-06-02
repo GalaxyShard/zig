@@ -553,17 +553,10 @@ fn render_meson(
             continue;
         };
 
-        if (!std.mem.startsWith(u8, line, "#")) {
-            try output.appendSlice(line);
-            if (!last_line) {
-                try output.appendSlice("\n");
-            }
-            continue;
-        }
-
-        var it = std.mem.tokenizeAny(u8, line[1..], " \t\r");
+        const potential_define = std.mem.trimStart(u8, line, " \t\r");
+        var it = std.mem.tokenizeAny(u8, potential_define, " \t\r");
         const mesondefine = it.next().?;
-        if (!std.mem.eql(u8, mesondefine, "mesondefine")) {
+        if (!std.mem.eql(u8, mesondefine, "#mesondefine")) {
             try output.appendSlice(line);
             if (!last_line) {
                 try output.appendSlice("\n");
@@ -578,6 +571,14 @@ fn render_meson(
             any_errors = true;
             continue;
         };
+
+        if (it.next()) |value| {
+            try step.addError("{s}:{d}: error: unexpected value after #mesondefine {s}: '{s}'", .{
+                src_path, line_index + 1, name, value,
+            });
+            any_errors = true;
+            continue;
+        }
 
         const value = values.get(name) orelse {
             try step.addError("{s}:{d}: error: unspecified config header value: '{s}'", .{
