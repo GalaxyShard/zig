@@ -982,7 +982,7 @@ fn expand_variables_meson(
         switch (value) {
             .undef, .defined => {},
             .boolean => |b| {
-                try buffer.appendSlice(if (b) "true" else "false");
+                try buffer.append(if (b) '1' else '0');
             },
             .int => |i| {
                 try buffer.writer().print("{d}", .{i});
@@ -1354,8 +1354,8 @@ test "expand_variables_meson simple cases" {
     // simple substitution
     try testReplaceVariablesMeson(allocator, "@undef@", "", values);
     try testReplaceVariablesMeson(allocator, "@defined@", "", values);
-    try testReplaceVariablesMeson(allocator, "@true@", "true", values);
-    try testReplaceVariablesMeson(allocator, "@false@", "false", values);
+    try testReplaceVariablesMeson(allocator, "@true@", "1", values);
+    try testReplaceVariablesMeson(allocator, "@false@", "0", values);
     try testReplaceVariablesMeson(allocator, "@int@", "42", values);
     try testReplaceVariablesMeson(allocator, "@ident@", "value", values);
     try testReplaceVariablesMeson(allocator, "@string@", "text", values);
@@ -1370,13 +1370,13 @@ test "expand_variables_meson simple cases" {
     try testReplaceVariablesMeson(allocator, "@int@.@int@", "42.42", values);
 
     // triple separated substitution
-    try testReplaceVariablesMeson(allocator, "@int@.@true@.@int@", "42.true.42", values);
+    try testReplaceVariablesMeson(allocator, "@int@.@true@.@int@", "42.1.42", values);
 
     // misc prefix is preserved
-    try testReplaceVariablesMeson(allocator, "false is @false@", "false is false", values);
+    try testReplaceVariablesMeson(allocator, "false is @false@", "false is 0", values);
 
     // misc suffix is preserved
-    try testReplaceVariablesMeson(allocator, "@true@ is true", "true is true", values);
+    try testReplaceVariablesMeson(allocator, "@true@ is true", "1 is true", values);
 
     // surrounding content is preserved
     try testReplaceVariablesMeson(allocator, "what is 6*7? @int@!", "what is 6*7? 42!", values);
