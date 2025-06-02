@@ -925,7 +925,7 @@ fn expand_variables_meson(
     contents: []const u8,
     values: std.StringArrayHashMap(Value),
 ) error{ MissingValue, InvalidCharacter, OutOfMemory }![]const u8 {
-    const valid_varname_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/_.+-";
+    const valid_varname_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";
 
     var prev: usize = 0;
     var current = std.mem.indexOfScalar(u8, contents, '@') orelse return contents;
