@@ -937,7 +937,7 @@ fn expand_variables_meson(
             try buffer.appendNTimes('\\', escapes / 2);
 
             // candidate for expansion
-            if (escapes % 2 == 0) {
+            if (escapes == 0) {
                 break;
             }
 
@@ -952,16 +952,13 @@ fn expand_variables_meson(
         };
 
         if (contents[valid_varname_end] != '@') {
-            if (std.mem.indexOfScalarPos(u8, contents, current + 1, '@') != null) {
-                // return the failed expansion
-                buffer.clearRetainingCapacity();
-                try buffer.appendSlice(contents[current .. valid_varname_end + 1]);
-                return error.InvalidCharacter;
-            } else {
+            try buffer.append('@');
+            prev = current + 1;
+            current = std.mem.indexOfScalarPos(u8, contents, current + 1, '@') orelse {
                 // nothing more to expand
-                try buffer.append('@');
                 break;
-            }
+            };
+            continue;
         }
 
         if (current + 1 == valid_varname_end) {
@@ -1393,10 +1390,6 @@ test "expand_variables_meson simple cases" {
 
     // unknown key leads to an error
     try std.testing.expectError(error.MissingValue, testReplaceVariablesMeson(allocator, "@bad@", "", values));
-
-    // invalid characters lead to an error
-    try std.testing.expectError(error.InvalidCharacter, testReplaceVariablesMeson(allocator, "@str*ing@", "", values));
-    try std.testing.expectError(error.InvalidCharacter, testReplaceVariablesMeson(allocator, "@str$ing@", "", values));
 }
 
 test "expand_variables_meson escapes" {
@@ -1407,27 +1400,26 @@ test "expand_variables_meson escapes" {
     try values.putNoClobber("var0", Value{ .string = "foo" });
     try values.putNoClobber("var1", Value{ .string = "bar" });
 
-    try testReplaceVariablesMeson(allocator, "\\@var0@", "@var0@", values);
-
-    // multiple escapes before a @ will be simplified to half as many escapes
-    // even numbers of escapes: substitution still happens
-    try testReplaceVariablesMeson(allocator, "\\\\@var0@", "\\foo", values);
-    try testReplaceVariablesMeson(allocator, "\\\\\\\\@var0@", "\\\\foo", values);
-    try testReplaceVariablesMeson(allocator, "\\\\var0", "\\\\var0", values);
-    try testReplaceVariablesMeson(allocator, "\\\\\\\\var0", "\\\\\\\\var0", values);
+    try testReplaceVariablesMeson(allocator, "\\@var0\\@", "@var0@", values);
 
     // multiple escapes before a @ will be simplified to half as many escapes (rounded down)
-    // odd numbers of escapes: substitution does not happen
-    // 2 escapes followed by a single escape to prevent replacement
+    try testReplaceVariablesMeson(allocator, "\\\\@var0@", "\\@var0@", values);
     try testReplaceVariablesMeson(allocator, "\\\\\\@var0@", "\\@var0@", values);
+    try testReplaceVariablesMeson(allocator, "\\\\\\\\@var0@", "\\\\@var0@", values);
     try testReplaceVariablesMeson(allocator, "\\\\\\\\\\@var0@", "\\\\@var0@", values);
+
+    // backslashes not before a @ are kept as-is
+    try testReplaceVariablesMeson(allocator, "\\\\var0", "\\\\var0", values);
     try testReplaceVariablesMeson(allocator, "\\\\\\var0", "\\\\\\var0", values);
-    try testReplaceVariablesMeson(allocator, "\\\\\\\\\\var0", "\\\\\\\\\\var0", values);
+
+    // escapes and backslashes
+    try testReplaceVariablesMeson(allocator, "\\\\ @ \\\\\\\\@", "\\\\ @ \\\\@", values);
 
     // escape doesn't affect later substitutions
     try testReplaceVariablesMeson(allocator, "\\@var0@var1@", "@var0bar", values);
 
     // escaping is not required when there is no matching @
+    try testReplaceVariablesMeson(allocator, "@var0", "@var0", values);
     try testReplaceVariablesMeson(allocator, "@var0:var1", "@var0:var1", values);
     try testReplaceVariablesMeson(allocator, "prefix @ suffix", "prefix @ suffix", values);
 }
